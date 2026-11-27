@@ -11,6 +11,8 @@ window.GAMES = [
     desc: '握力超過門檻撐 0.5 秒捏破蛋，從麻雀蛋一路到恐龍蛋，破完 10 關還有奇異鳥蛋。' },
   { folder: 'rocket', title: '水火箭發射', device: 'oriori', thumb: 'thumbs/rocket.jpg',
     desc: '握緊打氣、放開發射，放開那一瞬間的握力越大，火箭飛越高：從越過樹梢到飛出太空。' },
+  { folder: 'fishing', title: '釣魚大師', device: 'oriori', thumb: 'thumbs/fishing.jpg',
+    desc: '握緊收線、放鬆下沉，「！」出現時用力握讓魚上鉤；魚越大要越大的握力，掙扎時還要加力。90 秒比總重、收集圖鑑。' },
   { folder: 'keeper', title: '守門員大作戰', device: 'funfit', thumb: 'thumbs/keeper.jpg',
     desc: '握右手往右撲、握左手往左撲，球要碰到身體才算擋下。10 關、變化球、大招「重影」。' }
 ];
