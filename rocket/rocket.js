@@ -7,7 +7,7 @@
 (function (root) {
   'use strict';
 
-  var VERSION = '2026.10.19-6';   // 每次發佈都改，畫面右下角會顯示
+  var VERSION = '2026.11.27-1';   // 每次發佈都改，畫面右下角會顯示
   var A = root.RocketArt || (typeof require !== 'undefined' ? require('./art.js') : null);
   var W = 960, H = 540, H_MIN = 540, H_MAX = 760, SCENE_W = 720, PANEL_W = W - SCENE_W, ZONE_PX = 540, CAM0 = 0.4, ART_PAD_X = 440;
   var START_FORCE = 3.0, RELEASE_FORCE = 1.5, PUMP_MIN = 1.0, PEAK_WINDOW = 0.6;

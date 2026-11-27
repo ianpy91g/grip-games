@@ -2,7 +2,7 @@
 
 用 ORIORI 握力球發射水火箭：握緊打氣（至少 1 秒），放開那一瞬間的握力決定火箭飛多高。
 
-**開始玩：** https://ianpy91g.github.io/rocket-game/
+**開始玩：** https://ianpy91g.github.io/grip-games/rocket/
 
 - 自由挑戰，可以一直試。放開時的握力（放開前 0.6 秒內的最高值）決定等級與高度：
 

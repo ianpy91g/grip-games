@@ -234,6 +234,17 @@
   window.addEventListener('keyup', function (e) { game.key(e.code, false); });
   document.addEventListener('gesturestart', function (e) { e.preventDefault(); });   // 防止雙指縮放
 
+  // 「← 遊戲選單」連結：只在這些畫面顯示，遊戲中不擋畫面；放在遊戲畫面座標 HOME_POS（跟著畫布縮放對齊）
+  var HOME_STATES = ['menu'], HOME_POS = { x: 8, y: 200 }, homeEl = document.getElementById('home'), homeShown = false, homeAt = '';
+  function showHome(on) {
+    if (!homeEl) return;
+    if (on) {
+      var r = canvas.getBoundingClientRect(), at = Math.round(r.left + HOME_POS.x * scale) + ',' + Math.round(r.top + HOME_POS.y * scale);
+      if (at !== homeAt) { homeAt = at; homeEl.style.left = at.split(',')[0] + 'px'; homeEl.style.top = at.split(',')[1] + 'px'; }
+    }
+    if (on !== homeShown) { homeShown = on; homeEl.style.display = on ? 'block' : 'none'; }
+  }
+
   // ---------- 主迴圈 ----------
   var last = 0;
   function frame(t) {
@@ -243,6 +254,7 @@
     ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
     ctx.clearRect(0, 0, W, H);
     game.draw(ctx);
+    showHome(HOME_STATES.indexOf(game.state) >= 0);
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);

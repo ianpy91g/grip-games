@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="握力遊戲">
+<meta name="theme-color" content="#0b1730">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>握力遊戲</title>
+<style>
+  :root { --bg: #0b1730; --card: #15264a; --line: rgba(255,255,255,.14); --text: #f0eef5; --dim: #a8b0c4; }
+  html, body { margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, "PingFang TC", "Heiti TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif; }
+  body { -webkit-tap-highlight-color: transparent; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 28px 16px 40px; }
+  h1 { margin: 0 0 4px; font-size: 34px; letter-spacing: 2px; color: #ffcd46; }
+  .sub { margin: 0 0 26px; color: var(--dim); font-size: 16px; }
+  h2 { margin: 30px 0 12px; font-size: 21px; }
+  h2 > span { margin-right: 12px; }
+  h2 .dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; }
+  h2 small { color: var(--dim); font-size: 14px; font-weight: normal; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 16px; }
+  a.card { display: block; background: var(--card); border: 1px solid var(--line); border-radius: 16px; overflow: hidden;
+    color: inherit; text-decoration: none; -webkit-transition: transform .12s; transition: transform .12s; }
+  a.card:active { -webkit-transform: scale(.98); transform: scale(.98); }
+  .thumb { position: relative; padding-top: 56.25%; background: #000; }
+  .thumb img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+  .body { padding: 14px 16px 16px; }
+  .title { font-size: 21px; font-weight: bold; margin-bottom: 6px; }
+  .desc { color: var(--dim); font-size: 15px; line-height: 1.5; }
+  .tips { margin-top: 36px; padding: 16px 18px; border: 1px solid var(--line); border-radius: 14px; color: var(--dim); font-size: 14px; line-height: 1.7; }
+  .tips b { color: var(--text); }
+  @media (max-width: 480px) { h1 { font-size: 28px; } .grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>握力遊戲</h1>
+  <p class="sub">選一個遊戲開始玩：先看看手上是哪一種裝置</p>
+  <div id="list"></div>
+  <div class="tips">
+    <b>iPad／iPhone 請用 Bluefy 瀏覽器開啟</b>（Safari 不支援網頁藍牙）；Android 用 Chrome，電腦用 Chrome 或 Edge。<br>
+    連不到裝置時：先關掉手機上的原廠 App、確認裝置已開機，再按遊戲裡的「連接」。<br>
+    遊戲的選單畫面左上角有「← 遊戲選單」可以回到這裡。
+  </div>
+</div>
+<script>
+// 跟遊戲外殼一樣：每次開啟都加時間參數載入清單，避免 Bluefy 拿到快取的舊版
+(function () {
+  var s = document.createElement('script');
+  s.src = 'games.js?t=' + Date.now();
+  s.onload = render;
+  s.onerror = function () { document.getElementById('list').innerHTML = '<p>載入失敗，請確認網路後重新整理</p>'; };
+  document.body.appendChild(s);
+
+  function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function render() {
+    var html = '';
+    window.DEVICES.forEach(function (d) {
+      var games = window.GAMES.filter(function (g) { return g.device === d.id; });
+      if (!games.length) return;
+      html += '<h2><span><span class="dot" style="background:' + d.color + '"></span>' + esc(d.name) + '</span><small>' + esc(d.note) + '</small></h2><div class="grid">';
+      games.forEach(function (g) {
+        html += '<a class="card" href="' + esc(g.folder) + '/">' +
+          '<div class="thumb"><img src="' + esc(g.thumb) + '" alt=""></div>' +
+          '<div class="body"><div class="title">' + esc(g.title) + '</div><div class="desc">' + esc(g.desc) + '</div></div></a>';
+      });
+      html += '</div>';
+    });
+    document.getElementById('list').innerHTML = html;
+  }
+})();
+</script>
+</body>
+</html>

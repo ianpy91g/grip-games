@@ -2,7 +2,7 @@
 
 用兩支健身趣（智能握力環 Fit 100，藍牙名稱 `FUNFITGRIP`）當左右手撲球：握右手往右撲、握左手往左撲。
 
-**開始玩：** https://ianpy91g.github.io/keeper-game/
+**開始玩：** https://ianpy91g.github.io/grip-games/keeper/
 
 ## 玩法
 

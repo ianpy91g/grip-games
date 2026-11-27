@@ -8,7 +8,7 @@
 (function (root) {
   'use strict';
 
-  var VERSION = '2026.10.23-9';   // 每次發佈都改，畫面右下角會顯示
+  var VERSION = '2026.11.27-1';   // 每次發佈都改，畫面右下角會顯示
   var W = 960, H = 720, H_MIN = 540, H_MAX = 760;
   var FONT = '"PingFang TC", "Heiti TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif';
   var TEXT = [240, 238, 245], DIM = [160, 165, 180], GOLD = [255, 205, 70], GREEN = [96, 220, 150], RED = [255, 90, 90], CYAN = [110, 220, 255];
@@ -780,11 +780,13 @@
   Game.prototype.drawMenu = function (ctx) {
     var self = this, env = this.env, rings = env.rings || {};
     ctx.fillStyle = 'rgba(5,10,25,0.55)'; ctx.fillRect(0, 0, W, H);
-    this.text(ctx, '守門員大作戰', 58, GOLD, W / 2, H * 0.16);
-    this.text(ctx, '握右手往右撲、握左手往左撲；球要碰到守門員才算擋下，太晚撲會來不及', 17, TEXT, W / 2, H * 0.16 + 56, { weight: 'normal' });
-    this.text(ctx, '共 10 關、每關 5 球，越來越快，第 6 關起有變化球；連續撲到 10 球存大招，兩手一起握使出「重影」', 17, DIM, W / 2, H * 0.16 + 84, { weight: 'normal' });
+    // 寬螢幕（例如手機橫放，H 接近 540）時整個往上收，下方的文字才不會疊在一起
+    var tight = H < 640, top = tight ? 46 : H * 0.16;
+    this.text(ctx, '守門員大作戰', tight ? 50 : 58, GOLD, W / 2, top);
+    this.text(ctx, '握右手往右撲、握左手往左撲；球要碰到守門員才算擋下，太晚撲會來不及', 17, TEXT, W / 2, top + (tight ? 46 : 56), { weight: 'normal' });
+    this.text(ctx, '共 10 關、每關 5 球，越來越快，第 6 關起有變化球；連續撲到 10 球存大招，兩手一起握使出「重影」', 17, DIM, W / 2, top + (tight ? 70 : 84), { weight: 'normal' });
     // 連接左右手
-    var y = H * 0.16 + 130, sides = [['L', '左手', W / 2 - 290], ['R', '右手', W / 2 + 10]];
+    var y = top + (tight ? 100 : 130), sides = [['L', '左手', W / 2 - 290], ['R', '右手', W / 2 + 10]];
     for (var i = 0; i < 2; i++) {
       var s = sides[i], r = rings[s[0]] || {};
       var mf = this.menuFlash[s[0]];
@@ -808,10 +810,10 @@
         self.button(ctx, r.connected ? '重新連接' : '連接' + (side === 'L' ? '左手' : '右手'), s[2] + 40, y + 88, 200, 46, function () { env.connectRing(side); });
       })(s[0]);
     }
-    if (!env.bluetoothSupported) this.text(ctx, '這個瀏覽器不支援藍牙：iPad 請用 Bluefy 開啟。沒有握力環也能用觸控玩（點左半邊／右半邊）', 15, RED, W / 2, y + 172, { weight: 'normal' });
-    this.button(ctx, '開始遊戲', W / 2 - 130, y + 196, 260, 64, function () { self.newGame(); self.startLevel(); }, { fill: 'rgba(255,205,70,0.9)', color: [40, 30, 0], size: 26, stroke: 'rgba(255,230,150,1)' });
-    this.text(ctx, '兩支都連好後，兩手一起握也能開始', 15, DIM, W / 2, y + 282, { weight: 'normal' });
-    this.text(ctx, '最高分 ' + this.best + (this.bestLevel ? '　最遠第 ' + this.bestLevel + ' 關' : ''), 18, GOLD, W / 2, y + 318);
+    if (!env.bluetoothSupported) this.text(ctx, '這個瀏覽器不支援藍牙：iPad 請用 Bluefy 開啟。沒有握力環也能用觸控玩（點左半邊／右半邊）', 15, RED, W / 2, y + (tight ? 164 : 172), { weight: 'normal' });
+    this.button(ctx, '開始遊戲', W / 2 - 130, y + (tight ? 180 : 196), 260, 64, function () { self.newGame(); self.startLevel(); }, { fill: 'rgba(255,205,70,0.9)', color: [40, 30, 0], size: 26, stroke: 'rgba(255,230,150,1)' });
+    this.text(ctx, '兩支都連好後，兩手一起握也能開始', 15, DIM, W / 2, y + (tight ? 258 : 282), { weight: 'normal' });
+    this.text(ctx, '最高分 ' + this.best + (this.bestLevel ? '　最遠第 ' + this.bestLevel + ' 關' : ''), 18, GOLD, W / 2, y + (tight ? 286 : 318));
     this.button(ctx, this.musicOn ? '音樂：開' : '音樂：關', W - 150, 16, 130, 40, function () { self.toggleMusic(); }, { size: 16 });
     this.text(ctx, '沒有握力環：點左半邊／右半邊撲球，兩邊同時點＝重影　電腦：← → 撲球、↑ 重影', 14, DIM, W / 2, H - 40, { weight: 'normal' });
     this.text(ctx, '版本 ' + VERSION, 11, DIM, W - 10, H - 12, { align: 'right', weight: 'normal', shadow: false });

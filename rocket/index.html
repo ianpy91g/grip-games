@@ -17,10 +17,14 @@
   canvas { position: absolute; left: 50%; top: 50%; touch-action: none; display: block; }
   #rotate { position: fixed; top: 0; left: 0; right: 0; bottom: 0; display: none; align-items: center; justify-content: center; text-align: center;
     color: #f0eef5; font: bold 22px "PingFang TC", "Heiti TC", sans-serif; background: rgba(0,0,0,.85); padding: 20px; }
+  /* 回合集首頁：只在選單畫面顯示（app.js 控制） */
+  #home { position: fixed; left: 10px; top: 10px; white-space: nowrap; display: none; padding: 7px 14px; border-radius: 18px; z-index: 5;
+    color: #f0eef5; font: 15px "PingFang TC", "Heiti TC", sans-serif; text-decoration: none; background: rgba(0,0,0,.55); border: 1px solid rgba(255,255,255,.25); }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
+<a id="home" href="../">← 遊戲選單</a>
 <div id="rotate">請把平板橫放<br><span style="font-size:16px;opacity:.7">（直放也能玩，只是畫面比較小）</span></div>
 <script>
 // Bluefy 等 App 內建瀏覽器會把檔案暫存很久，重新整理也拿不到新版。
