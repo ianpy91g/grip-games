@@ -17,6 +17,7 @@
 | `thumbs/` | 首頁卡片縮圖（640×360 JPG，取自遊戲選單畫面的 16:9 截圖） |
 | `egg/` | 捏蛋大挑戰（ORIORI 握力球）：`game.js` 本體、`app.js`、`kiwi.png` |
 | `rocket/` | 水火箭發射（ORIORI 握力球）：`rocket.js` 本體、`art.js` 背景繪圖、`app.js` |
+| `fishing/` | 釣魚大師（ORIORI 握力球）：`fishing.js` 本體、`app.js` |
 | `keeper/` | 守門員大作戰（健身趣握力環 ×2）：`keeper.js` 本體、`app.js` |
 | `tests/` | Node 測試，`node tests/run.js` 全部執行（不會部署上線） |
 | `.github/workflows/pages.yml` | 推到 main → 跑測試 → 通過才部署；PR 只跑測試 |
@@ -59,7 +60,7 @@
 
 ## 裝置協定
 
-### ORIORI 握力球（egg、rocket）
+### ORIORI 握力球（egg、rocket、fishing）
 
 - 藍牙名稱 `weixin-` 開頭；服務 `FFB0`，通知通道 `FFB2`。
 - 資料是 ASCII：`"19" + 方向(1=用力/0=放鬆) + 握力值`，例如 `19128.0`。
