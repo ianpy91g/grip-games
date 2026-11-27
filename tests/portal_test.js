@@ -17,5 +17,6 @@ win.GAMES.forEach(function (g) {
   ok(fs.existsSync(path.join(root, g.thumb)), g.title + '：縮圖 ' + g.thumb + ' 存在');
   ok(win.DEVICES.some(function (d) { return d.id === g.device; }), g.title + '：裝置 ' + g.device + ' 有定義在 DEVICES');
   ok(/id="home"[^>]*href="\.\.\/"/.test(html), g.title + '：有「← 遊戲選單」連結回首頁');
+  ok(html.indexOf("'../music.js'") >= 0, g.title + '：有載入共用背景音樂 ../music.js');
 });
 h.done();

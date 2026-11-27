@@ -14,6 +14,7 @@
 |---|---|
 | `index.html` | 首頁：依裝置分區列出遊戲卡片，清單讀 `games.js` |
 | `games.js` | 遊戲清單 `GAMES` 與裝置清單 `DEVICES`（新增遊戲只改這裡＋放遊戲資料夾） |
+| `music.js` | 共用背景音樂引擎 `GripMusic`（WebAudio 即時合成），每個遊戲一首曲子，曲譜都在這個檔案的 `SONGS` |
 | `thumbs/` | 首頁卡片縮圖（640×360 JPG，取自遊戲選單畫面的 16:9 截圖） |
 | `egg/` | 捏蛋大挑戰（ORIORI 握力球）：`game.js` 本體、`app.js`、`kiwi.png` |
 | `rocket/` | 水火箭發射（ORIORI 握力球）：`rocket.js` 本體、`art.js` 背景繪圖、`app.js` |
@@ -24,7 +25,7 @@
 
 每個遊戲資料夾都是同一套架構：
 
-- `index.html`：小外殼，每次開啟用時間參數載入 js（避免 Bluefy 拿到快取舊版）。幾乎不用改。左上角有「← 遊戲選單」連結 `#home`。
+- `index.html`：小外殼，每次開啟用時間參數載入 js（避免 Bluefy 拿到快取舊版），第一個載入 `../music.js`。幾乎不用改。左上角有「← 遊戲選單」連結 `#home`。
 - 遊戲本體 js：畫圖、邏輯、音效、音樂；**不碰 DOM**，可在 Node 測試；開頭有 `VERSION`，畫面右下角會顯示。
 - `app.js`：畫面縮放、觸控、鍵盤、Web Bluetooth、存檔（localStorage）。`HOME_STATES`／`HOME_POS` 決定「← 遊戲選單」在哪些畫面顯示、放在哪裡（遊戲座標）。
 
@@ -51,12 +52,13 @@
 ## 新增遊戲
 
 1. 建新資料夾（例如 `newgame/`），複製一個現有遊戲的 `index.html` 外殼與 `app.js` 當起點（同裝置的遊戲最接近：握力球參考 `egg/`，握力環參考 `keeper/`）。
-2. 本體 js 照同樣模式：`Game(env)`、`update(dt)`、`draw(ctx)`、`state`，匯出到 `root.XxxGame` 與 `module.exports`。
-3. 在 `app.js` 設好 `HOME_STATES`、`HOME_POS`（選單畫面裡不會擋到東西的位置）。
-4. 在 `games.js` 的 `GAMES` 加一筆；用到新裝置時在 `DEVICES` 加一筆。
-5. 截一張選單畫面（1280×720）縮成 640×360 JPG 放 `thumbs/`。
-6. 在 `tests/` 加 `<遊戲>_test.js`：至少跑完一局並每幀用 `helpers.mockContext()` 畫圖。`tests/portal_test.js` 會檢查清單、縮圖、回選單連結有沒有漏。
-7. 遊戲資料夾放一份 `README.md` 說明玩法與操作。
+2. 在 `music.js` 的 `SONGS` 加一首新曲子（換個風格、速度、主旋律音色），本體 js 的 `setAudio` 用 `new root.GripMusic(ac, '<遊戲>')`。
+3. 本體 js 照同樣模式：`Game(env)`、`update(dt)`、`draw(ctx)`、`state`，匯出到 `root.XxxGame` 與 `module.exports`。
+4. 在 `app.js` 設好 `HOME_STATES`、`HOME_POS`（選單畫面裡不會擋到東西的位置）。
+5. 在 `games.js` 的 `GAMES` 加一筆；用到新裝置時在 `DEVICES` 加一筆。
+6. 截一張選單畫面（1280×720）縮成 640×360 JPG 放 `thumbs/`。
+7. 在 `tests/` 加 `<遊戲>_test.js`：至少跑完一局並每幀用 `helpers.mockContext()` 畫圖。`tests/portal_test.js` 會檢查清單、縮圖、回選單連結有沒有漏。
+8. 遊戲資料夾放一份 `README.md` 說明玩法與操作。
 
 ## 裝置協定
 
