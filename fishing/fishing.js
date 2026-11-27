@@ -1,7 +1,7 @@
 /* 釣魚大師（網頁版）— 遊戲本體：畫圖、邏輯、音效、音樂。不碰 DOM，可在 Node 測試。 */
 (function (root) {
   'use strict';
-  var VERSION = '2026.11.27-1';   // 每次發佈都改，選單右下角會顯示
+  var VERSION = '2026.11.27-2';   // 每次發佈都改，選單右下角會顯示
   var W = 960, H = 540, H_MIN = 540, H_MAX = 760;
   var WATER_Y = 150;              // 水面高度（上面是天空和船）
   var BOAT_X = 160, TIP_X = 300, TIP_Y = 50;   // 船的位置、竿尖
@@ -52,16 +52,16 @@
     { id: 'bass', name: '鱸魚', d: [0.35, 0.7], len: 84, thr: 21, kg: [1.5, 4], stam: 4.0, esc: 0.19, w: 7, speed: 65,
       look: { top: [85, 105, 95], belly: [222, 228, 218], fin: [110, 125, 115], aspect: 0.34, pattern: 'bass' },
       fact: '鱸魚能在海水和河口之間來去，台灣也有養殖的金目鱸。' },
-    { id: 'mahi', name: '鬼頭刀', d: [0.4, 0.75], len: 100, thr: 26, kg: [4, 12], stam: 4.5, esc: 0.2, w: 5, speed: 110,
+    { id: 'mahi', name: '鬼頭刀', d: [0.4, 0.75], len: 100, thr: 26, kg: [4, 12], stam: 4.5, esc: 0.2, w: 9, speed: 110,
       look: { top: [40, 170, 125], belly: [250, 215, 60], fin: [40, 140, 200], aspect: 0.36, pattern: 'mahi' },
       fact: '鬼頭刀又叫鱰魚，游得很快，是台灣東部漁港的名產。' },
-    { id: 'grouper', name: '石斑魚', d: [0.6, 0.95], len: 104, thr: 31, kg: [6, 20], stam: 5.0, esc: 0.21, w: 4, speed: 35,
+    { id: 'grouper', name: '石斑魚', d: [0.6, 0.95], len: 104, thr: 31, kg: [6, 20], stam: 5.0, esc: 0.21, w: 8, speed: 35,
       look: { top: [150, 105, 72], belly: [205, 175, 135], fin: [130, 90, 60], aspect: 0.46, pattern: 'grouper' },
       fact: '石斑魚愛躲在礁石洞裡，很多一出生是母的，長大才變公的。' },
-    { id: 'tuna', name: '黑鮪魚', d: [0.55, 0.9], len: 130, thr: 37, kg: [30, 120], stam: 5.5, esc: 0.22, w: 3, speed: 120,
+    { id: 'tuna', name: '黑鮪魚', d: [0.55, 0.9], len: 130, thr: 37, kg: [30, 120], stam: 5.5, esc: 0.22, w: 6, speed: 120,
       look: { top: [32, 48, 95], belly: [215, 222, 232], fin: [60, 70, 110], aspect: 0.36, pattern: 'tuna' },
       fact: '黑鮪魚時速可達 70 公里，屏東東港每年都有黑鮪魚季。' },
-    { id: 'shark', name: '鯊魚', d: [0.78, 1.0], len: 160, thr: 44, kg: [60, 200], stam: 6.5, esc: 0.24, w: 1.5, speed: 80,
+    { id: 'shark', name: '鯊魚', d: [0.78, 1.0], len: 160, thr: 44, kg: [60, 200], stam: 6.5, esc: 0.24, w: 3, speed: 80,
       look: { top: [112, 128, 145], belly: [228, 232, 238], fin: [100, 115, 132], aspect: 0.28, pattern: 'shark' },
       fact: '鯊魚的牙齒會一直換新，一輩子可以換掉上萬顆牙。' }
   ];
@@ -76,6 +76,9 @@
   function fmtKg(kg) { return kg < 10 ? kg.toFixed(2) : kg.toFixed(1); }
   function bedY() { return H - 48; }   // 海底（沙地頂端）
   function depthY(fr) { var top = WATER_Y + 34, bot = bedY() - 30; return top + fr * (bot - top); }
+  function depthOf(y) { var top = WATER_Y + 34, bot = bedY() - 30; return (y - top) / (bot - top); }   // depthY 的反函數
+  // 魚只追自己出沒深度附近的餌：小魚不會一路追到深海，餌沉下去才輪得到大魚
+  function canReach(sp, y) { return depthOf(y) <= sp.d[1] + 0.1; }
   function ellipse(ctx, cx, cy, rx, ry, fill) {
     ctx.beginPath(); ctx.ellipse(cx, cy, Math.max(0.1, rx), Math.max(0.1, ry), 0, 0, Math.PI * 2);
     if (fill) { ctx.fillStyle = fill; ctx.fill(); }
@@ -436,12 +439,15 @@
         f.x += f.dir * f.speed * dt;
         f.y += (depthY(f.fr) + Math.sin(f.t * 1.3 + f.ph) * 7 - f.y) * Math.min(1, dt * 2);
         if (lureFree && !this.chaser && f.cool <= 0 && L.y > WATER_Y + 14) {
-          var m = this.mouth(f), dx = L.x - m.x, dy = L.y - m.y;
-          if (Math.abs(dy) < 90 && Math.abs(dx) < 150 && this.rnd() < dt * 1.6) { f.mode = 'chase'; f.chaseT = 0; this.chaser = f; }
+          // 越大的魚（深海）看得越遠、越容易被吸引，游得快的魚經過時才來得及注意到餌
+          var m = this.mouth(f), dx = L.x - m.x, dy = L.y - m.y, tier = f.sp.index / (FISH.length - 1);
+          if (canReach(f.sp, L.y) && Math.abs(dy) < 90 + 60 * tier && Math.abs(dx) < 150 + 130 * tier && this.rnd() < dt * (1.6 + 2.4 * tier)) {
+            f.mode = 'chase'; f.chaseT = 0; this.chaser = f;
+          }
         }
       } else if (f.mode === 'chase') {
         f.chaseT += dt;
-        if (!lureFree || f.chaseT > 7) { f.mode = 'swim'; f.cool = 3; if (this.chaser === f) this.chaser = null; continue; }
+        if (!lureFree || f.chaseT > 7 || !canReach(f.sp, L.y)) { f.mode = 'swim'; f.cool = 3; if (this.chaser === f) this.chaser = null; continue; }
         if (Math.abs(L.x - f.x) > 6) f.dir = L.x > f.x ? 1 : -1;
         var tx = L.x - f.dir * f.len * 0.45, ty = L.y, ddx = tx - f.x, ddy = ty - f.y, d = Math.sqrt(ddx * ddx + ddy * ddy);
         var v = Math.max(50, f.speed * 0.75) * dt;
@@ -1075,7 +1081,7 @@
 
   function setHeight(h) { H = Math.round(clamp(h, H_MIN, H_MAX)); api.H = H; return H; }   // 由 app.js 依螢幕比例設定
   var api = { VERSION: VERSION, Game: Game, W: W, H: H, setHeight: setHeight, FISH: FISH, MODES: MODES, ROUND_TIME: ROUND_TIME,
-              STRUGGLE_K: STRUGGLE_K, fishThr: fishThr, hookForce: hookForce, drawFish: drawFish };
+              STRUGGLE_K: STRUGGLE_K, canReach: canReach, depthY: depthY, fishThr: fishThr, hookForce: hookForce, drawFish: drawFish };
   root.FishingGame = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : this);
