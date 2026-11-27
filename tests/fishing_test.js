@@ -83,6 +83,23 @@ function STRUGGLE() { return F.STRUGGLE_K * 1.1; }
 var sp = F.FISH[5];
 ok(F.fishThr(sp, 0.5, 'kids') < F.fishThr(sp, 0.5, 'normal') && F.fishThr(sp, 0.5, 'normal') < F.fishThr(sp, 0.5, 'hard'), '門檻：兒童 < 一般 < 困難');
 
+// 9b. 小魚只追自己深度附近的餌；深海大魚從比較遠的地方就會注意到餌
+function noticeRate(id, lureFr, fishFr, dx, sec) {
+  var n = 0;
+  for (var k = 0; k < 20; k++) {
+    var o = mk(100 + k), g = o.g, sp = F.FISH.filter(function (s) { return s.id === id; })[0];
+    g.startRound(); g.phase = 'sink'; g.lure.x = 600; g.lure.y = F.depthY(lureFr);
+    var f = g.spawnFish(true); f.sp = sp; f.len = sp.len; f.fr = fishFr; f.y = F.depthY(fishFr); f.speed = 0; f.dir = 1;
+    f.x = 600 - dx - f.len * 0.45; g.fishes = [f];
+    for (var t = 0; t < sec; t += DT) { g.timeLeft = 90; g.lure.y = F.depthY(lureFr); g.updateFish(DT); g.fishes.length = 1; if (f.mode !== 'swim') break; }
+    if (f.mode !== 'swim') n++;
+  }
+  return n;
+}
+ok(noticeRate('clown', 0.85, 0.3, 20, 3) === 0, '餌沉到深海：小丑魚不會追下去');
+ok(noticeRate('clown', 0.3, 0.3, 20, 3) >= 15, '餌在淺水：小丑魚會來咬');
+ok(noticeRate('tuna', 0.8, 0.8, 230, 3) >= 15 && noticeRate('clown', 0.3, 0.3, 230, 3) === 0, '距離 230：黑鮪魚會注意到餌，小丑魚不會');
+
 // 10. 自動玩完一整局（從選單開始），每幀畫圖；兩種畫面高度各一次
 [540, 760].forEach(function (H) {
   F.setHeight(H);
