@@ -6,7 +6,7 @@
 (function (root) {
   'use strict';
 
-  var VERSION = '2026.11.27-1';   // 每次發佈都改，選單右下角會顯示，方便確認拿到的是不是最新版
+  var VERSION = '2026.11.27-2';   // 每次發佈都改，選單右下角會顯示，方便確認拿到的是不是最新版
   var W = 960, H = 540, GROUND_Y = 450, EGG_X = 400;
   // 三種難度：握力門檻倍率、要撐住幾秒、每關幾次機會
   var MODES = {
@@ -392,96 +392,7 @@
     } catch (e) { /* 忽略 */ }
   };
 
-  // ---------- 背景音樂（程式合成的 8 小節循環，C → Am → F → G） ----------
-  // 旋律以八分音符為單位，null = 延長前一個音
-  var MELODY = [
-    72, null, 76, null, 79, null, 76, 74,   72, null, 69, null, 72, 76, null, null,
-    77, null, 76, 74, 72, null, 69, null,   71, null, 74, null, 79, null, 77, 74,
-    76, null, 79, null, 84, null, 79, null, 81, null, 79, 76, 72, null, 76, null,
-    77, 79, 81, null, 79, 77, 76, 74,       74, null, 71, null, 74, null, 67, null
-  ];
-  var BASS = [48, 45, 41, 43, 48, 45, 41, 43];   // 每小節的根音（每拍彈根音與五度）
-  var BPM = 128;
-
-  function Music(ac) {
-    this.ac = ac;
-    this.enabled = false;
-    this.step = 0;
-    this.next = 0;
-    this.master = ac.createGain();
-    this.master.gain.value = 0;
-    this.master.connect(ac.destination);
-    var n = Math.floor(ac.sampleRate * 0.05), buf = ac.createBuffer(1, n, ac.sampleRate), d = buf.getChannelData(0);
-    for (var i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (n / 6));
-    this.noise = buf;
-  }
-  Music.VOLUME = 0.13;
-  Music.prototype.setEnabled = function (on) {
-    this.enabled = on;
-    var t = this.ac.currentTime;
-    this.master.gain.cancelScheduledValues(t);
-    this.master.gain.setTargetAtTime(on ? Music.VOLUME : 0, t, 0.2);
-    clearInterval(this.timer); this.timer = null;
-    if (on) {   // 用自己的計時器排程，不跟畫面更新綁在一起：畫面卡一下，音樂也不會斷
-      var self = this;
-      this.next = t + 0.1;
-      this.timer = setInterval(function () { self.tick(); }, 50);
-    }
-  };
-  Music.prototype.duck = function (seconds) {   // 捏破時讓音樂暫時變小聲
-    if (!this.enabled) return;
-    var t = this.ac.currentTime, g = this.master.gain;
-    g.cancelScheduledValues(t);
-    g.setTargetAtTime(Music.VOLUME * 0.2, t, 0.03);
-    g.setTargetAtTime(Music.VOLUME, t + seconds, 0.4);
-  };
-  Music.prototype.note = function (type, midi, t, dur, vol) {
-    var o = this.ac.createOscillator(), g = this.ac.createGain();
-    o.type = type;
-    o.frequency.value = 440 * Math.pow(2, (midi - 69) / 12);
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(g); g.connect(this.master);
-    o.start(t); o.stop(t + dur + 0.02);
-  };
-  Music.prototype.kick = function (t) {
-    var o = this.ac.createOscillator(), g = this.ac.createGain();
-    o.frequency.setValueAtTime(130, t);
-    o.frequency.exponentialRampToValueAtTime(45, t + 0.12);
-    g.gain.setValueAtTime(0.9, t);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
-    o.connect(g); g.connect(this.master);
-    o.start(t); o.stop(t + 0.2);
-  };
-  Music.prototype.hat = function (t, vol) {
-    var s = this.ac.createBufferSource(), g = this.ac.createGain(), f = this.ac.createBiquadFilter();
-    s.buffer = this.noise; f.type = 'highpass'; f.frequency.value = 6000; g.gain.value = vol;
-    s.connect(f); f.connect(g); g.connect(this.master);
-    s.start(t);
-  };
-  Music.prototype.tick = function () {   // 計時器每 50ms 呼叫：預先排好接下來 0.5 秒內的音符
-    if (!this.enabled) return;
-    var now = this.ac.currentTime, eighth = 60 / BPM / 2;
-    if (this.next < now - 0.3) this.next = now + 0.05;   // 分頁在背景太久，重新對時
-    while (this.next < now + 0.5) {
-      var t = this.next, st = this.step, bar = Math.floor(st / 8) % 8, inBar = st % 8;
-      var m = MELODY[st];
-      if (m !== null) {
-        var len = 1;
-        while (len < 4 && MELODY[(st + len) % MELODY.length] === null) len++;
-        this.note('square', m, t, eighth * len * 0.9, 0.16);
-      }
-      if (inBar % 2 === 0) {   // 低音：每拍，根音與五度交替
-        var root = BASS[bar];
-        this.note('triangle', inBar % 4 === 0 ? root : root + 7, t, eighth * 1.8, 0.5);
-      }
-      if (inBar === 0 || inBar === 4) this.kick(t);
-      this.hat(t, inBar % 2 ? 0.25 : 0.12);
-      this.step = (st + 1) % MELODY.length;
-      this.next += eighth;
-    }
-  };
+  // 背景音樂：共用引擎 ../music.js（GripMusic），這個遊戲用曲子 'egg'
 
   // ---------- 遊戲 ----------
   function Game(env) {
@@ -507,7 +418,7 @@
   G.setAudio = function (ac) {
     this.sfx = new Sfx(ac);
     try {
-      this.music = new Music(ac);
+      this.music = new root.GripMusic(ac, 'egg');
       this.music.setEnabled(this.save.music);
     } catch (e) { this.music = null; }
   };

@@ -8,7 +8,7 @@
 (function (root) {
   'use strict';
 
-  var VERSION = '2026.11.27-1';   // 每次發佈都改，畫面右下角會顯示
+  var VERSION = '2026.11.27-2';   // 每次發佈都改，畫面右下角會顯示
   var W = 960, H = 720, H_MIN = 540, H_MAX = 760;
   var FONT = '"PingFang TC", "Heiti TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif';
   var TEXT = [240, 238, 245], DIM = [160, 165, 180], GOLD = [255, 205, 70], GREEN = [96, 220, 150], RED = [255, 90, 90], CYAN = [110, 220, 255];
@@ -138,66 +138,7 @@
     try { var s = this.ac.createBufferSource(); s.buffer = this.buf[name]; s.connect(this.ac.destination); s.start(0); } catch (e) { }
   };
 
-  // 背景音樂：C 大調輕快的足球場風 8 小節循環（C → G → Am → F），null = 延長前一個音
-  var MELODY = [
-    72, null, 76, 79, null, 76, 74, 72,    74, null, 71, 74, null, 79, 77, 74,
-    76, null, 72, 76, null, 81, 79, 76,    77, null, 76, 74, null, 72, 74, null,
-    72, 72, 76, null, 79, null, 84, null,  83, null, 79, 74, null, 71, 74, null,
-    76, 77, 79, null, 76, 74, 72, null,    74, null, 76, 74, 72, null, null, null
-  ];
-  var BASS = [48, 43, 45, 41, 48, 43, 45, 41];
-  var BPM = 124;
-  function Music(ac) {
-    this.ac = ac; this.enabled = false; this.step = 0; this.next = 0;
-    this.master = ac.createGain(); this.master.gain.value = 0; this.master.connect(ac.destination);
-    var n = Math.floor(ac.sampleRate * 0.05), b = ac.createBuffer(1, n, ac.sampleRate), d = b.getChannelData(0);
-    for (var i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (n / 6));
-    this.noise = b;
-  }
-  Music.VOLUME = 0.1;
-  Music.prototype.setEnabled = function (on) {
-    this.enabled = on;
-    var t = this.ac.currentTime, self = this;
-    this.master.gain.cancelScheduledValues(t);
-    this.master.gain.setTargetAtTime(on ? Music.VOLUME : 0, t, 0.2);
-    clearInterval(this.timer); this.timer = null;
-    if (on) { this.next = t + 0.1; this.timer = setInterval(function () { self.tick(); }, 50); }
-  };
-  Music.prototype.note = function (type, midi, t, dur, vol) {
-    var o = this.ac.createOscillator(), g = this.ac.createGain();
-    o.type = type; o.frequency.value = 440 * Math.pow(2, (midi - 69) / 12);
-    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(g); g.connect(this.master); o.start(t); o.stop(t + dur + 0.02);
-  };
-  Music.prototype.drum = function (t) {
-    var o = this.ac.createOscillator(), g = this.ac.createGain();
-    o.frequency.setValueAtTime(120, t); o.frequency.exponentialRampToValueAtTime(45, t + 0.12);
-    g.gain.setValueAtTime(0.8, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
-    o.connect(g); g.connect(this.master); o.start(t); o.stop(t + 0.2);
-  };
-  Music.prototype.hat = function (t, vol) {
-    var s = this.ac.createBufferSource(), g = this.ac.createGain(), f = this.ac.createBiquadFilter();
-    s.buffer = this.noise; f.type = 'highpass'; f.frequency.value = 6500; g.gain.value = vol;
-    s.connect(f); f.connect(g); g.connect(this.master); s.start(t);
-  };
-  Music.prototype.tick = function () {
-    if (!this.enabled) return;
-    var now = this.ac.currentTime, eighth = 60 / BPM / 2;
-    if (this.next < now - 0.3) this.next = now + 0.05;
-    while (this.next < now + 0.5) {
-      var t = this.next, st = this.step, bar = Math.floor(st / 8) % 8, inBar = st % 8, m = MELODY[st];
-      if (m !== null) {
-        var len = 1;
-        while (len < 4 && MELODY[(st + len) % MELODY.length] === null) len++;
-        this.note('square', m, t, eighth * len * 0.9, 0.12);
-      }
-      if (inBar % 2 === 0) this.note('triangle', inBar % 4 === 0 ? BASS[bar] : BASS[bar] + 7, t, eighth * 1.8, 0.5);
-      if (inBar === 0 || inBar === 4) this.drum(t);
-      if (inBar % 2 === 1) this.hat(t, 0.18);
-      this.step = (st + 1) % MELODY.length;
-      this.next += eighth;
-    }
-  };
+  // 背景音樂：共用引擎 ../music.js（GripMusic），這個遊戲用曲子 'keeper'
 
   // ---------- 遊戲 ----------
   /* env：{ rings: {L:{connected,status,pressedAt}, R:{...}}, storage:{get,set}, connectRing(side), bluetoothSupported, random } */
@@ -227,7 +168,7 @@
 
   Game.prototype.setAudio = function (ac) {
     this.sfx = new Sfx(ac);
-    try { this.music = new Music(ac); this.music.setEnabled(this.musicOn); } catch (e) { this.music = null; }
+    try { this.music = new root.GripMusic(ac, 'keeper'); this.music.setEnabled(this.musicOn); } catch (e) { this.music = null; }
   };
   Game.prototype.toggleMusic = function () {
     this.musicOn = !this.musicOn;

@@ -7,7 +7,7 @@
 (function (root) {
   'use strict';
 
-  var VERSION = '2026.11.27-1';   // 每次發佈都改，畫面右下角會顯示
+  var VERSION = '2026.11.27-2';   // 每次發佈都改，畫面右下角會顯示
   var A = root.RocketArt || (typeof require !== 'undefined' ? require('./art.js') : null);
   var W = 960, H = 540, H_MIN = 540, H_MAX = 760, SCENE_W = 720, PANEL_W = W - SCENE_W, ZONE_PX = 540, CAM0 = 0.4, ART_PAD_X = 440;
   var START_FORCE = 3.0, RELEASE_FORCE = 1.5, PUMP_MIN = 1.0, PEAK_WINDOW = 0.6;
@@ -118,77 +118,7 @@
     try { var s = this.ac.createBufferSource(); s.buffer = this.buf[name]; s.connect(this.ac.destination); s.start(0); } catch (e) { }
   };
 
-  // 背景音樂：A 小調的冒險風 8 小節循環（Am → F → C → G），null = 延長前一個音
-  var MELODY = [
-    69, null, 72, 76, null, 74, 72, null,   65, null, 69, 72, null, 71, 69, null,
-    72, null, 76, 79, null, 77, 76, 74,     71, null, 74, 79, null, 77, 74, null,
-    76, 77, 79, null, 81, null, 79, 76,     77, 76, 74, null, 72, null, 69, null,
-    72, 74, 76, null, 79, null, 76, 72,     74, null, 71, null, 67, null, null, null
-  ];
-  var BASS = [45, 41, 48, 43, 45, 41, 48, 43];
-  var BPM = 116;
-  function Music(ac) {
-    this.ac = ac; this.enabled = false; this.step = 0; this.next = 0;
-    this.master = ac.createGain(); this.master.gain.value = 0; this.master.connect(ac.destination);
-    var n = Math.floor(ac.sampleRate * 0.05), b = ac.createBuffer(1, n, ac.sampleRate), d = b.getChannelData(0);
-    for (var i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (n / 6));
-    this.noise = b;
-  }
-  Music.VOLUME = 0.12;
-  Music.prototype.setEnabled = function (on) {
-    this.enabled = on;
-    var t = this.ac.currentTime, self = this;
-    this.master.gain.cancelScheduledValues(t);
-    this.master.gain.setTargetAtTime(on ? Music.VOLUME : 0, t, 0.2);
-    clearInterval(this.timer); this.timer = null;
-    if (on) {   // 獨立計時器排程：畫面卡一下，音樂也不會斷
-      this.next = t + 0.1;
-      this.timer = setInterval(function () { self.tick(); }, 50);
-    }
-  };
-  Music.prototype.duck = function (sec) {
-    if (!this.enabled) return;
-    var t = this.ac.currentTime, g = this.master.gain;
-    g.cancelScheduledValues(t);
-    g.setTargetAtTime(Music.VOLUME * 0.25, t, 0.05);
-    g.setTargetAtTime(Music.VOLUME, t + sec, 0.5);
-  };
-  Music.prototype.note = function (type, midi, t, dur, vol) {
-    var o = this.ac.createOscillator(), g = this.ac.createGain();
-    o.type = type; o.frequency.value = 440 * Math.pow(2, (midi - 69) / 12);
-    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(g); g.connect(this.master); o.start(t); o.stop(t + dur + 0.02);
-  };
-  Music.prototype.kick = function (t) {
-    var o = this.ac.createOscillator(), g = this.ac.createGain();
-    o.frequency.setValueAtTime(120, t); o.frequency.exponentialRampToValueAtTime(45, t + 0.12);
-    g.gain.setValueAtTime(0.8, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
-    o.connect(g); g.connect(this.master); o.start(t); o.stop(t + 0.2);
-  };
-  Music.prototype.hat = function (t, vol) {
-    var s = this.ac.createBufferSource(), g = this.ac.createGain(), f = this.ac.createBiquadFilter();
-    s.buffer = this.noise; f.type = 'highpass'; f.frequency.value = 6500; g.gain.value = vol;
-    s.connect(f); f.connect(g); g.connect(this.master); s.start(t);
-  };
-  Music.prototype.tick = function () {
-    if (!this.enabled) return;
-    var now = this.ac.currentTime, eighth = 60 / BPM / 2;
-    if (this.next < now - 0.3) this.next = now + 0.05;
-    while (this.next < now + 0.5) {
-      var t = this.next, st = this.step, bar = Math.floor(st / 8) % 8, inBar = st % 8, m = MELODY[st];
-      if (m !== null) {
-        var len = 1;
-        while (len < 4 && MELODY[(st + len) % MELODY.length] === null) len++;
-        this.note('square', m, t, eighth * len * 0.9, 0.14);
-        if (inBar % 4 === 0) this.note('triangle', m + 12, t, eighth * 0.6, 0.05);   // 高八度點綴
-      }
-      if (inBar % 2 === 0) this.note('triangle', inBar % 4 === 0 ? BASS[bar] : BASS[bar] + 7, t, eighth * 1.8, 0.5);
-      if (inBar === 0 || inBar === 4) this.kick(t);
-      if (inBar % 2 === 1) this.hat(t, 0.2);
-      this.step = (st + 1) % MELODY.length;
-      this.next += eighth;
-    }
-  };
+  // 背景音樂：共用引擎 ../music.js（GripMusic），這個遊戲用曲子 'rocket'
 
   // ---------- 遊戲 ----------
   function Game(env) {
@@ -210,7 +140,7 @@
 
   G.setAudio = function (ac) {
     this.sfx = new Sfx(ac);
-    try { this.music = new Music(ac); this.music.setEnabled(this.save.music); } catch (e) { this.music = null; }
+    try { this.music = new root.GripMusic(ac, 'rocket'); this.music.setEnabled(this.save.music); } catch (e) { this.music = null; }
   };
 
   // ---- 存檔：圖鑑留在這台裝置；最佳紀錄與最近 10 次是「這位玩家」的，按換人挑戰清空 ----

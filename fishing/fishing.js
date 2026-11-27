@@ -1,7 +1,7 @@
 /* 釣魚大師（網頁版）— 遊戲本體：畫圖、邏輯、音效、音樂。不碰 DOM，可在 Node 測試。 */
 (function (root) {
   'use strict';
-  var VERSION = '2026.11.27-2';   // 每次發佈都改，選單右下角會顯示
+  var VERSION = '2026.11.27-3';   // 每次發佈都改，選單右下角會顯示
   var W = 960, H = 540, H_MIN = 540, H_MAX = 760;
   var WATER_Y = 150;              // 水面高度（上面是天空和船）
   var BOAT_X = 160, TIP_X = 300, TIP_Y = 50;   // 船的位置、竿尖
@@ -235,59 +235,7 @@
     } catch (e) { /* 忽略 */ }
   };
 
-  // ---------- 背景音樂（程式合成的 8 小節循環，C → Am → Dm → G，輕鬆的海邊風） ----------
-  var MELODY = [
-    67, null, 72, null, 76, null, 74, 72,   69, null, 72, null, 76, null, null, null,
-    74, null, 77, null, 81, null, 79, 77,   79, null, 74, null, 71, null, null, null,
-    72, 74, 76, null, 79, null, 76, null,   81, null, 79, 76, 72, null, 69, null,
-    74, null, 77, 76, 74, null, 71, null,   72, null, null, null, 67, null, null, null
-  ];
-  var BASS = [48, 45, 50, 43, 48, 45, 50, 43];
-  var BPM = 112;
-  function Music(ac) {
-    this.ac = ac; this.enabled = false; this.step = 0; this.next = 0;
-    this.master = ac.createGain(); this.master.gain.value = 0; this.master.connect(ac.destination);
-  }
-  Music.VOLUME = 0.12;
-  Music.prototype.setEnabled = function (on) {
-    this.enabled = on;
-    var t = this.ac.currentTime;
-    this.master.gain.cancelScheduledValues(t);
-    this.master.gain.setTargetAtTime(on ? Music.VOLUME : 0, t, 0.2);
-    clearInterval(this.timer); this.timer = null;
-    if (on) {   // 用自己的計時器排程，畫面卡一下音樂也不會斷
-      var self = this;
-      this.next = t + 0.1;
-      this.timer = setInterval(function () { self.tick(); }, 50);
-    }
-  };
-  Music.prototype.note = function (type, midi, t, dur, vol) {
-    var o = this.ac.createOscillator(), g = this.ac.createGain();
-    o.type = type;
-    o.frequency.value = 440 * Math.pow(2, (midi - 69) / 12);
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(g); g.connect(this.master);
-    o.start(t); o.stop(t + dur + 0.02);
-  };
-  Music.prototype.tick = function () {   // 每 50ms：預先排好接下來 0.5 秒內的音符
-    if (!this.enabled) return;
-    var now = this.ac.currentTime, eighth = 60 / BPM / 2;
-    if (this.next < now - 0.3) this.next = now + 0.05;
-    while (this.next < now + 0.5) {
-      var t = this.next, st = this.step, bar = Math.floor(st / 8) % 8, inBar = st % 8, m = MELODY[st];
-      if (m !== null) {
-        var len = 1;
-        while (len < 4 && MELODY[(st + len) % MELODY.length] === null) len++;
-        this.note('triangle', m, t, eighth * len * 0.95, 0.35);
-        this.note('square', m + 12, t, eighth * 0.5, 0.04);
-      }
-      if (inBar % 2 === 0) { var r = BASS[bar]; this.note('triangle', inBar % 4 === 0 ? r : r + 7, t, eighth * 1.6, 0.45); }
-      this.step = (st + 1) % MELODY.length;
-      this.next += eighth;
-    }
-  };
+  // 背景音樂：共用引擎 ../music.js（GripMusic），這個遊戲用曲子 'fishing'
 
   // ---------- 遊戲 ----------
   function Game(env) {
@@ -315,7 +263,7 @@
 
   G.setAudio = function (ac) {   // iOS 要在第一次觸碰後才能啟動音效
     this.sfx = new Sfx(ac);
-    try { this.music = new Music(ac); this.music.setEnabled(this.save.music); } catch (e) { this.music = null; }
+    try { this.music = new root.GripMusic(ac, 'fishing'); this.music.setEnabled(this.save.music); } catch (e) { this.music = null; }
   };
 
   // ---- 存檔：難度、音樂、圖鑑、各難度最佳總重 ----
