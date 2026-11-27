@@ -74,4 +74,4 @@
 
 ## 舊網址
 
-以前三個遊戲各自一個 repo（`egg-game`、`rocket-game`、`keeper-game`），本機資料夾是 `ORIORI/egg_web`、`rocket_web`、`keeper_web`。它們停在搬家前的版本（2026-11-27），**以後只改這個合集，不要再改那三個 repo 或資料夾**。舊網址目前還能玩舊版；是否改成轉址到這裡，要等使用者決定。
+以前三個遊戲各自一個 repo（`egg-game`、`rocket-game`、`keeper-game`，本機資料夾 `ORIORI/egg_web`、`rocket_web`、`keeper_web`）。2026-11-27 起那三個 repo 只剩轉址頁，舊網址會自動轉到這裡對應的遊戲；原本的修改紀錄都已併進這個 repo。**以後只改這個合集，不要再改那三個 repo 或資料夾。**
